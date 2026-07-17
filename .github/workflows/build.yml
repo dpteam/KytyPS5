@@ -21,11 +21,11 @@ jobs:
         with:
           arch: x64
 
-      - name: Prepare Vulkan SDK (Headers + Utility-Libraries)
+      - name: Prepare Vulkan SDK (Headers only)
         uses: humbletim/setup-vulkan-sdk@v1.2.1
         with:
           vulkan-query-version: 1.3.296.0
-          vulkan-components: Vulkan-Headers Vulkan-Utility-Libraries
+          vulkan-components: Vulkan-Headers
           vulkan-use-cache: true
 
       - name: Generate vulkan-1.lib from system DLL
@@ -51,19 +51,17 @@ jobs:
           Write-Host "Generated $libPath successfully."
         shell: pwsh
 
-      - name: Verify Vulkan headers are present
+      - name: Fetch and install Vulkan Utility Libraries Headers
         run: |
+          # Клонируем репозиторий с тегом, соответствующим версии SDK
+          git clone --depth 1 -b vulkan-sdk-1.3.296.0 https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git _vulkan_util
+          
+          # Копируем недостающие заголовки (включая vk_enum_string_helper.h) в VULKAN_SDK
           $dest = "$env:VULKAN_SDK\include\vulkan"
-          if (-not (Test-Path "$dest\vulkan.h")) {
-            Write-Error "vulkan.h not found in $dest"
-            exit 1
-          }
-          if (-not (Test-Path "$dest\vk_enum_string_helper.h")) {
-            Write-Error "vk_enum_string_helper.h not found in $dest. Ensure Vulkan-Utility-Libraries component is installed."
-            exit 1
-          }
-          Write-Host "Vulkan headers OK at $dest"
-          Get-ChildItem $dest -Filter "vk_enum*" | ForEach-Object { Write-Host "  $($_.Name)" }
+          New-Item -ItemType Directory -Force -Path $dest
+          Copy-Item -Path "_vulkan_util\include\vulkan\*" -Destination $dest -Recurse -Force
+          
+          Write-Host "Vulkan Utility Libraries headers copied successfully."
         shell: pwsh
 
       - name: Install Qt 6
