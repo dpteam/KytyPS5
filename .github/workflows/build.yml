@@ -21,16 +21,21 @@ jobs:
         with:
           arch: x64
 
-      # Обновляем CMake, чтобы исправить баг с ml64.exe при сборке Vulkan-Loader
-      - name: Setup latest CMake
-        uses: lukka/get-cmake@latest
-
-      - name: Prepare Vulkan SDK (Headers & Loader)
+      - name: Prepare Vulkan SDK (Headers only)
         uses: humbletim/setup-vulkan-sdk@v1.2.1
         with:
           vulkan-query-version: 1.3.296.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-components: Vulkan-Headers
           vulkan-use-cache: true
+
+      # Обходим баг сборки Vulkan-Loader, скопировав vulkan-1.lib из Windows SDK
+      - name: Provide vulkan-1.lib from Windows SDK
+        run: |
+          $sdkLibPath = Join-Path $env:WindowsSdkDir "Lib\$($env:WindowsSDKVersion.TrimEnd('\'))\um\x64\vulkan-1.lib"
+          New-Item -ItemType Directory -Force -Path "$env:VULKAN_SDK\Lib"
+          Copy-Item $sdkLibPath "$env:VULKAN_SDK\Lib\vulkan-1.lib"
+          Write-Host "Copied vulkan-1.lib to $env:VULKAN_SDK\Lib\vulkan-1.lib"
+        shell: pwsh
 
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
