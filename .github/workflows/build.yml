@@ -21,17 +21,21 @@ jobs:
         with:
           arch: x64
 
-      - name: Prepare Vulkan SDK (Headers only)
+      # Обновляем CMake, чтобы исправить баг с ml64.exe при сборке Vulkan-Loader
+      - name: Setup latest CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Prepare Vulkan SDK (Headers & Loader)
         uses: humbletim/setup-vulkan-sdk@v1.2.1
         with:
           vulkan-query-version: 1.3.296.0
-          vulkan-components: Vulkan-Headers
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.*'           # <-- Версия изменена на 6.8 (поддерживает win64_msvc2022_64)
+          version: '6.8.*'
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
