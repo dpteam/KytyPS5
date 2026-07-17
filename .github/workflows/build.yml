@@ -55,6 +55,14 @@ jobs:
           Write-Host "Generated $libPath successfully."
         shell: pwsh
 
+      # Копируем все заголовочные файлы из сабмодуля, чтобы гарантировать наличие vk_enum_string_helper.h и других
+      - name: Ensure all Vulkan headers are present
+        run: |
+          Write-Host "Copying headers from submodule to VULKAN_SDK..."
+          Copy-Item -Path "3rdparty\Vulkan-Headers\include\vulkan\*" -Destination "$env:VULKAN_SDK\include\vulkan" -Recurse -Force
+          Write-Host "Headers copied successfully."
+        shell: pwsh
+
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
