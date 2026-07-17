@@ -28,7 +28,6 @@ jobs:
           vulkan-components: Vulkan-Headers
           vulkan-use-cache: true
 
-      # Генерируем vulkan-1.lib из системного vulkan-1.dll, чтобы CMake мог найти библиотеку
       - name: Generate vulkan-1.lib from system DLL
         run: |
           $dllPath = "C:\Windows\System32\vulkan-1.dll"
@@ -39,28 +38,26 @@ jobs:
           Write-Host "Generating vulkan-1.lib from $dllPath..."
           New-Item -ItemType Directory -Force -Path $libDir
 
-          # Извлекаем экспортируемые функции из DLL
           $output = & dumpbin /exports $dllPath
           $exports = $output | Select-String -Pattern "^\s+\d+\s+[0-9A-Fa-f]+\s+(\S+)" | ForEach-Object { $_.Matches.Groups[1].Value }
 
-          # Создаем .def файл
           Add-Content -Path $defPath -Value "LIBRARY vulkan-1.dll"
           Add-Content -Path $defPath -Value "EXPORTS"
           foreach ($exp in $exports) {
             Add-Content -Path $defPath -Value $exp
           }
 
-          # Генерируем .lib
           & lib /def:$defPath /out:$libPath /machine:x64
           Write-Host "Generated $libPath successfully."
         shell: pwsh
 
-      # Копируем все заголовочные файлы из сабмодуля, чтобы гарантировать наличие vk_enum_string_helper.h и других
+      # Копируем заголовочные файлы из сабмодуля, принудительно создавая директорию
       - name: Ensure all Vulkan headers are present
         run: |
-          Write-Host "Copying headers from submodule to VULKAN_SDK..."
-          Copy-Item -Path "3rdparty\Vulkan-Headers\include\vulkan\*" -Destination "$env:VULKAN_SDK\include\vulkan" -Recurse -Force
-          Write-Host "Headers copied successfully."
+          $dest = "$env:VULKAN_SDK\include\vulkan"
+          New-Item -ItemType Directory -Force -Path $dest
+          Copy-Item -Path "3rdparty\Vulkan-Headers\include\vulkan\*" -Destination $dest -Recurse -Force
+          Write-Host "Headers copied successfully to $dest"
         shell: pwsh
 
       - name: Install Qt 6
